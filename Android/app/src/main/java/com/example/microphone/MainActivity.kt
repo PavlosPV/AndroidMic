@@ -26,7 +26,9 @@ class GlobalState(
     var isBluetoothStarted : Boolean,
     var bluetoothShouldStop : Boolean,
     var isAudioStarted : Boolean,
-    var audioShouldStop : Boolean
+    var audioShouldStop : Boolean,
+    var isAdbStarted : Boolean,
+    var adbShouldStop : Boolean
 )
 
 // global data structure
@@ -74,8 +76,11 @@ class MainActivity : AppCompatActivity()
 
     private var helperBluetooth : BluetoothHelper? = null
     private var helperAudio : AudioHelper? = null
+    private var helperAdb : AdbHelper? = null
 
     private val mGlobalState = GlobalState(
+        false,
+        false,
         false,
         false,
         false,
@@ -86,6 +91,7 @@ class MainActivity : AppCompatActivity()
 
     private var threadBth : Thread? = null
     private var threadAio : Thread? = null
+    private var threadAdb : Thread? = null
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
@@ -101,10 +107,13 @@ class MainActivity : AppCompatActivity()
         super.onStop()
         mGlobalState.bluetoothShouldStop = true
         mGlobalState.audioShouldStop = true
+        mGlobalState.adbShouldStop = true
         threadBth?.join()
         threadAio?.join()
+        threadAdb?.join()
         helperBluetooth?.clean()
         helperAudio?.clean()
+        helperAdb?.clean()
     }
 
     override fun onResume() {
@@ -113,17 +122,62 @@ class MainActivity : AppCompatActivity()
         findViewById<SwitchCompat>(R.id.audio_switch).isChecked = false
         mGlobalState.isBluetoothStarted = false
         mGlobalState.isAudioStarted = false
+        mGlobalState.isAdbStarted = false
+        startAdbThread()
     }
 
     override fun onPause() {
         super.onPause()
-        mLogTextView.text = "" // clear log messages on pause
         mGlobalState.bluetoothShouldStop = true
         mGlobalState.audioShouldStop = true
+        mGlobalState.adbShouldStop = true
         threadBth?.join()
         threadAio?.join()
+        threadAdb?.join()
         helperBluetooth?.clean()
         helperAudio?.clean()
+        helperAdb?.clean()
+        mLogTextView.text = "" // clear log messages on pause
+    }
+
+    private fun startAdbThread()
+    {
+        helperAdb = try{AdbHelper(this, mGlobalData)}
+        catch (e : IllegalArgumentException) {
+            addLogMessage("Error " + e.message)
+            null
+        }
+        // set adb thread
+        threadAdb = Thread(Runnable {
+            // first try to connect
+            runOnUiThread {
+                addLogMessage("Searching USB connection")
+            }
+            while(!mGlobalState.adbShouldStop && helperAdb != null)
+            {
+                if(!isConnected() && helperAdb?.connect() == true)
+                {
+                    runOnUiThread {
+                        addLogMessage("Device connected")
+                        addLogMessage("Connected Device Information\n${helperAdb?.getConnectedDeviceInfo()}")
+                    }
+                    mGlobalState.isAdbStarted = true
+                    while(!mGlobalState.adbShouldStop)
+                    {
+                        if(!(helperAdb?.isSocketValid() == true && helperAdb?.sendData() == true))
+                            break
+                        Thread.sleep(1)
+                    }
+                    helperAdb?.disconnect()
+                    mGlobalState.isAdbStarted = false
+                    runOnUiThread {
+                        addLogMessage("Device disconnected")
+                    }
+                }
+                Thread.sleep(500)
+            }
+        })
+        threadAdb?.start()
     }
 
     // onclick for bluetooth button
@@ -131,6 +185,11 @@ class MainActivity : AppCompatActivity()
     {
         if(!mGlobalState.isBluetoothStarted)
         {
+            if(isConnected())
+            {
+                showToastMessage("Already connected")
+                return
+            }
             val activity = this
             if(mJobBluetooth?.isActive == true) return
             this.showToastMessage("Starting bluetooth...")
@@ -304,5 +363,11 @@ class MainActivity : AppCompatActivity()
     fun addLogMessage(message : String)
     {
         mLogTextView.append(message + "\n")
+    }
+
+    // check if is connected
+    private fun isConnected() : Boolean
+    {
+        return mGlobalState.isAdbStarted || mGlobalState.isBluetoothStarted
     }
 }

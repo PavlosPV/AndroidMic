@@ -71,7 +71,7 @@ class AudioHelper(mActivity: MainActivity, private val mGlobalData : GlobalData)
         ByteBuffer.wrap(newData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().put(convertShort)
         // store data
         mGlobalData.addData(newData)
-        Log.d(mLogTag, "[setData] new data recorded (${newData.size} bytes)")
+        // Log.d(mLogTag, "[setData] new data recorded (${newData.size} bytes)")
     }
 
     // start recording

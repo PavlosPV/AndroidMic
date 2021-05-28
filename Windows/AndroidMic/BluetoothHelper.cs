@@ -94,7 +94,7 @@ namespace AndroidMic
         // accepting callback
         private void AcceptCallback(IAsyncResult result)
         {
-            if(!isConnectionAllowed)
+            if(!isConnectionAllowed || mMainWindow.IsConnected())
             {
                 Status = BthStatus.DEFAULT;
                 return;
@@ -148,9 +148,9 @@ namespace AndroidMic
                         mClientStream.ReadTimeout = MAX_WAIT_TIME;
                         mClientStream.WriteTimeout = MAX_WAIT_TIME;
                     }
-                    isConnectionAllowed = true;
                     AddLog("Device connected\nclient [Name]: " + mClient.RemoteMachineName + "\nclient [Address]: " + mClient.RemoteEndPoint);
                     // start processing
+                    isConnectionAllowed = true;
                     mProcessThread = new Thread(new ThreadStart(Process));
                     mProcessThread.Start();
                     Debug.WriteLine("[BluetoothHelper] process started");
@@ -233,6 +233,7 @@ namespace AndroidMic
             mClientStream = null;
             AddLog("Device disconnected");
             Disconnect();
+            Debug.WriteLine("[BluetoothHelper] client disconnected");
         }
 
         // disconnect current client
@@ -244,12 +245,12 @@ namespace AndroidMic
                 mClient.Dispose();
                 mClient = null;
             }
+            if (Application.Current == null) return;
             Application.Current.Dispatcher.Invoke(new Action(() =>
             {
                 mMainWindow.mWaveformDisplay.Reset();
                 mMainWindow.ConnectButton.Content = "Connect";
             }));
-            Debug.WriteLine("[BluetoothHelper] client disconnected");
         }
 
         // check if client is valid
@@ -285,6 +286,7 @@ namespace AndroidMic
         // helper function to add log message
         private void AddLog(string message)
         {
+            if (Application.Current == null) return;
             Application.Current.Dispatcher.Invoke(new Action(() =>
             {
                 mMainWindow.AddLogMessage("[Bluetooth]\n" + message + "\n");

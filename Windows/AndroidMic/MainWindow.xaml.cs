@@ -39,6 +39,7 @@ namespace AndroidMic
         private readonly AudioData mGlobalData = new AudioData();
         private readonly BluetoothHelper mHelperBluetooth;
         private readonly AudioHelper mHelperAudio;
+        private readonly ADBHelper mHelperADB;
         public WaveDisplay mWaveformDisplay;
         private readonly System.Windows.Forms.NotifyIcon notifyIcon = new System.Windows.Forms.NotifyIcon();
 
@@ -48,6 +49,7 @@ namespace AndroidMic
             // init objects
             mHelperBluetooth = new BluetoothHelper(this, mGlobalData);
             mHelperAudio = new AudioHelper(this, mGlobalData);
+            mHelperADB = new ADBHelper(this, mGlobalData);
             // setup audio
             SetupAudioList();
             mHelperAudio.Start();
@@ -95,6 +97,7 @@ namespace AndroidMic
         {
             mHelperBluetooth.StopServer();
             mHelperAudio.Stop();
+            mHelperADB.Clean();
             notifyIcon.Dispose();
         }
 
@@ -104,7 +107,11 @@ namespace AndroidMic
             Button button = (Button)sender;
             if(mHelperBluetooth.Status == BthStatus.DEFAULT)
             {
-                if(!BluetoothHelper.CheckBluetooth())
+                if(IsConnected())
+                {
+                    AddLogMessage("Device is already connected through USB\n");
+                }
+                else if(!BluetoothHelper.CheckBluetooth())
                 {
                     MessageBox.Show("Bluetooth not enabled\nPlease enable it and try again", "AndroidMic Bluetooth", MessageBoxButton.OK);
                 }
@@ -183,6 +190,12 @@ namespace AndroidMic
             // only update when window is not minimized
             if(WindowState != WindowState.Minimized)
                 mWaveformDisplay.AddData(valPos, valNeg);
+        }
+
+        // check if device is connected through bluetooth
+        public bool IsConnected()
+        {
+            return (mHelperBluetooth.Status == BthStatus.CONNECTED) || (mHelperADB.Status == AdbStatus.CONNECTED);
         }
     }
 }

@@ -66,12 +66,7 @@ namespace AndroidMic
             isAudioAllowed = false;
             if (mProcessThread != null && mProcessThread.IsAlive)
             {
-                try
-                {
-                    if (!mProcessThread.Join(MAX_WAIT_TIME))
-                        mProcessThread.Abort();
-                }
-                catch (ThreadStateException) { }
+                if (!mProcessThread.Join(MAX_WAIT_TIME)) mProcessThread.Abort();
             }
             if (mWaveOut.PlaybackState == PlaybackState.Playing) mWaveOut.Stop();
             mWaveOut.Dispose();
@@ -110,7 +105,7 @@ namespace AndroidMic
                 }
                 if (startIdx != data.Item2) mRenderSkipByte = true;
                 else mRenderSkipByte = false;
-                //Debug.WriteLine("[AudioHelper] new data (" + data.Item2 + " bytes)");
+                // Debug.WriteLine("[AudioHelper] new data (" + data.Item2 + " bytes)");
                 Thread.Sleep(1);
             }
         }
@@ -133,6 +128,7 @@ namespace AndroidMic
         // helper function to add log message
         private void AddLog(string message)
         {
+            if (Application.Current == null) return;
             Application.Current.Dispatcher.Invoke(new Action(() =>
             {
                 mMainWindow.AddLogMessage("[Audio]\n" + message + "\n");
@@ -142,6 +138,7 @@ namespace AndroidMic
         // add new point to wave graph
         private void AddWavePoint()
         {
+            if (Application.Current == null) return;
             Application.Current.Dispatcher.Invoke(new Action(() =>
             {
                 mMainWindow.RefreshWaveform(mRenderPos, mRenderNeg);

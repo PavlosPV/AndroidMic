@@ -34,7 +34,7 @@ That's all!
 - [x] Windows app can minimize to system tray  
 - [x] Volume control on Windows side  
 - [x] Audio visualization on Windows side  
-- [ ] USB serial port connection support  
+- [x] USB serial port connection support  
 - [ ] Make Android side able to run in background  
 - [ ] Show notification when mic is in use on Android side  
 
@@ -54,3 +54,14 @@ Pre-built installers can be found [here](https://github.com/teamclouday/AndroidM
 ### Android Side
 
 <img src="Assets/p2.jpg" width="250" alt="Android Side">
+
+------
+
+### USB Communication
+
+This branch contains an implementation of communication between Windows app and Android app through USB cable, based on `adb` tcp forwarding. Android side acting as a TCP server, and Windows side as a TCP client.  
+
+However, this method requires Android phone to be in USB debugging mode.  
+Socket communication is also wierd because of the forwarded connection. For example, when Android side has not started, Windows side will still be able to read stream (0 byte however) because a forwarded port is enabled. But when Android side is started and Windows side has connected, if Android side do not send data, Windows side will regard it as a timeout (no longer reading 0 byte). This problem makes things difficult. As an alternative solution, I have to reset connection and try to connect again every 1 second. This works but leave a messy log message interface to user.  
+
+With that said, this branch contains a working solution, as long as USB debugging is enabled and you can bear with the messy log message!
