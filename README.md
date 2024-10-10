@@ -1,6 +1,7 @@
 # Android Microphone
 
-Use your Android phone as a microphone to Windows PC
+Use your Android phone as a microphone to Windows PC. This fork adds auto-connect functionality to allow the client to reconnect\
+to the server if the connection is lost.
 
 ------
 
