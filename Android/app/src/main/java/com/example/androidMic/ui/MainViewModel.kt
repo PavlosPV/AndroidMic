@@ -169,6 +169,13 @@ class MainViewModel(
         mService?.send(reply)
     }
 
+    fun onAutoConnectSwitch() {
+        val currentAutoConnectValue = uiStates.value.isAutoConnectOn
+        savedStateHandle["uiStates"] = uiStates.value.copy(
+            isAutoConnectOn = !currentAutoConnectValue
+        )
+    }
+
     fun setIpPort(ip: String, port: String) {
         prefManager["IP"] = ip
         prefManager["PORT"] = port

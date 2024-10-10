@@ -15,6 +15,7 @@ sealed interface States : java.io.Serializable {
         val isStreamStarted: Boolean = false,
         val isAudioStarted: Boolean = false,
         val mode: Modes = Modes.WIFI,
+        val isAutoConnectOn: Boolean = false,
 
         val switchAudioIsClickable: Boolean = true,
         val buttonConnectIsClickable: Boolean = true,

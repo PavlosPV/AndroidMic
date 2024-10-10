@@ -43,7 +43,10 @@ import com.example.androidMic.ui.utils.getWifiPermission
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.LaunchedEffect
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(mainViewModel: MainViewModel, currentWindowInfo: WindowInfo) {
     val uiStates = mainViewModel.uiStates.collectAsState()
@@ -152,8 +155,51 @@ fun HomeScreen(mainViewModel: MainViewModel, currentWindowInfo: WindowInfo) {
             }
         }
     }
-}
 
+    val wifiPermissionsState = rememberMultiplePermissionsState(
+        permissions = getWifiPermission()
+    )
+    val bluetoothPermissionsState = rememberMultiplePermissionsState(
+        permissions = getBluetoothPermission()
+    )
+    val usbPermissionsState = rememberMultiplePermissionsState(
+        permissions = getUsbPermission()
+    )
+
+    LaunchedEffect(true) {
+        while (true) {
+            delay(60000L)
+            if (uiStates.value.isAutoConnectOn && !uiStates.value.isStreamStarted) {
+                when (uiStates.value.mode) {
+                    Modes.WIFI -> {
+                        if (!wifiPermissionsState.allPermissionsGranted)
+                            wifiPermissionsState.launchMultiplePermissionRequest()
+                        else
+                            mainViewModel.onConnectButton()
+                    }
+
+                    Modes.BLUETOOTH -> {
+                        if (!bluetoothPermissionsState.allPermissionsGranted)
+                            bluetoothPermissionsState.launchMultiplePermissionRequest()
+                        else
+                            mainViewModel.onConnectButton()
+                    }
+
+                    Modes.USB -> {
+                        if (!usbPermissionsState.allPermissionsGranted)
+                            usbPermissionsState.launchMultiplePermissionRequest()
+                        else
+                            mainViewModel.onConnectButton()
+                    }
+
+                    Modes.UDP -> {
+                        mainViewModel.onConnectButton()
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun Log(
@@ -202,6 +248,8 @@ private fun InteractionButton(
         )
         Spacer(modifier = Modifier.height(10.dp))
         SwitchAudio(mainViewModel = mainViewModel, uiStates = uiStates)
+        Spacer(modifier = Modifier.height(10.dp))
+        SwitchAutoConnect(mainViewModel = mainViewModel, uiStates = uiStates)
     }
 }
 
@@ -290,6 +338,32 @@ private fun SwitchAudio(mainViewModel: MainViewModel, uiStates: States.UiStates)
 
             },
             enabled = uiStates.switchAudioIsClickable
+        )
+    }
+}
+
+@OptIn(ExperimentalPermissionsApi::class)
+@Composable
+private fun SwitchAutoConnect(mainViewModel: MainViewModel, uiStates: States.UiStates) {
+
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(id = R.string.turn_auto_connect),
+            color = MaterialTheme.colorScheme.onBackground,
+            style = MaterialTheme.typography.labelLarge
+        )
+
+        Spacer(Modifier.width(12.dp))
+
+        Switch(
+            checked = uiStates.isAutoConnectOn,
+            onCheckedChange = {
+                mainViewModel.onAutoConnectSwitch()
+            },
+            enabled = true
         )
     }
 }
